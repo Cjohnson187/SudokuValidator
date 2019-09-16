@@ -1,5 +1,5 @@
 //#include <Mspthrd.h>
-//#include <pthread.h>
+#include <pthread.h>
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -115,6 +115,47 @@ void* fill_v() {
 
 		}
 	}
+}
+
+void* fill_block() {
+
+}
+
+void* check_dup(int list[9][9], bool bool_list[9]) {
+	int standard_array[9] = { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9 };
+	int i = 0;
+	int j = 0;
+	int x = 0;
+	int temp = 0;
+	int occurences = 0;
+	
+
+
+	for (i = 0; i < 9; i++) {
+		temp = list[x][i];
+
+
+		for (j = 0; j < 9; j++) {
+			if (temp == list[x][j]) occurences++;
+		}
+		if (occurences > 1) {
+			bool_list[x] = FALSE;
+			x++;
+			i = 0;
+		}
+		if (i == 8) {
+			x++;
+			i = 0;
+			bool_list[x] = TRUE;
+		}
+		if (x == 8) {
+			break;
+		}
+	}
+
+
+
+
 }
 
 
