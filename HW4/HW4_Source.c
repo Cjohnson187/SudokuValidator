@@ -235,7 +235,7 @@ int main(void) {
 	int i = 0;
 	int j = 0;
 	for (i = 0; i < 9; i++) {
-		for (j = 0; j < 18; j++) {
+		for (j = 0; j < 9; j++) {
 			if (j == 0) {
 				parameters *row_data = (parameters*)malloc(sizeof(parameters));
 				row_data->top_row = i;
@@ -244,7 +244,7 @@ int main(void) {
 			}
 			
 			if (i == 0) {
-				parameters* column_data = (parameters*)malloc(sizeof(parameters));
+				parameters *column_data = (parameters*)malloc(sizeof(parameters));
 				column_data->top_row = i;
 				column_data->left_column = j;
 				pthread_create(&thread[index++], NULL, check_column, column_data);
@@ -257,31 +257,35 @@ int main(void) {
 	for (int k = 0; k < num_child_threads-9; k++) pthread_join(thread[k], NULL);
 
 	printf("\ndoneish3\n");
+	bool all_checks = TRUE;
 
 	for (int k = 0; k < 9; k++) {
 		if (rows_bool[k] == FALSE) {
 			printf("\nrow #- %d is invalid\n", k+1);
-			//for (int h = 0; h < 9; h++) printf("\nrow h = %d ", rows_bool[h]);
-			return 0;
+			all_checks = FALSE;
+			//return 0;
 		}
 		if (column_bool[k] == FALSE) {
 			printf("\ncolumn #- %d is invalid\n", k+1);
-			//for (int h = 0; h < 9; h++) printf("\ncolumn h = %d  %d\n", column_bool[h], h);
-			return 0;
+			all_checks = FALSE;
+			//return 0;
 		}
 		if (blocks_bool[k] == FALSE) {
 			printf("\nblock #- %d is invalid\n", k+1);
-			return 0;
+			all_checks = FALSE;
+			//return 0;
 		}
+	}
 
-
-		
+	if (all_checks == FALSE) {
+		printf("\n\nSudoku puzzle is NOT valid\n\n");
+		return 0;
 	}
 
 
 
 
-	printf("Sudoku puzzle is valid");
+	printf("\n\nSudoku puzzle is valid\n\n");
 	return 0;
 }
 
