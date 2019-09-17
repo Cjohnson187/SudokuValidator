@@ -2,13 +2,12 @@
 Chris Johnson
 CS3600-001
 HW #3
-program to validate given sudoku solution in text 
-file seperated by tabs and lines.
+program to validate given sudoku solution by rows, columns 
+and blocks in text file seperated by tabs and lines.
 */
 
 
 
-//#include <Mspthrd.h>
 #include <pthread.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -21,22 +20,14 @@ typedef int bool;
 #define TRUE 1
 #define FALSE 0
 
-char* file_name = "input.txt";
-FILE* filepoint;
-
-int sum[num_child_threads];
-//int check[27] = { 0 };
 
 bool rows_bool[9] = { TRUE, TRUE, TRUE, TRUE, TRUE, TRUE, TRUE, TRUE, TRUE };
 bool column_bool[9] = { TRUE, TRUE, TRUE, TRUE, TRUE, TRUE, TRUE, TRUE, TRUE };
 bool blocks_bool[9] = { TRUE, TRUE, TRUE, TRUE, TRUE, TRUE, TRUE, TRUE, TRUE };
 
-int rows_2D[9][9] = { 0 };
-int columns_2D[9][9] = { 0 };
-int blocks_2D[9][9] = { 0 };
+int Sudoku_2D[9][9] = { 0 };
 
 
-//void *runner(void* param);
 
 typedef struct {
 	int top_row;
@@ -85,7 +76,6 @@ void* check_row(void* para) {
 	int current_row = data->top_row;
 	int current_column = data->left_column;
 	if (current_column != 0 || current_row > 8) {
-		//printf("\ncurrent column%d  /  current row%d\n", current_column, current_row);
 		printf("\ninvalid row format\n");
 		pthread_exit(0);
 	}
@@ -94,13 +84,9 @@ void* check_row(void* para) {
 	int i = 0;
 	for (i = 0; i < 9; i++) {
 
-		int temp = rows_2D[current_row][i];
-		//printf("\n current row  %d , and val = %d and i = %d ", current_row+1 , rows_2D[current_row][i], i);
-
-		//printf("\n in (for) temp  %d ", temp);
+		int temp = Sudoku_2D[current_row][i];
 
 		if (temp > 9 || temp < 1 || temp_array[temp-1] == 1) { 
-			printf("\ntemp  %d ", temp);
 			printf(" current row %d invalid \n", current_row+1);
 			rows_bool[current_row] = FALSE;
 			pthread_exit(0);
@@ -118,7 +104,6 @@ void* check_column(void* para) {
 	int current_row = data->top_row;
 	int current_column = data->left_column;
 	if (current_row != 0 || current_column > 8) {
-		//printf("\ncurrent column%d  /  current row%d\n", current_column, current_row);
 		printf("\ninvalid column format c - %d,  r - %d  \n", current_column, current_row);
 		pthread_exit(0);
 	}
@@ -127,13 +112,10 @@ void* check_column(void* para) {
 	int i = 0;
 	for (i = 0; i < 9; i++) {
 
-		int temp = rows_2D[i][current_column];
-		//printf("\n current row  %d , and val = %d and i = %d ", current_row+1 , rows_2D[current_row][i], i);
-
-		//printf("\n in (for) temp  %d ", temp);
+		int temp = Sudoku_2D[i][current_column];
 
 		if (temp > 9 || temp < 1 || temp_array[temp - 1] == 1) {
-			printf("\ntemp  %d ", temp);
+			//printf("\ntemp  %d ", temp);
 			printf(" current column %d invalid \n", current_column + 1);
 			column_bool[current_column] = FALSE;
 			pthread_exit(0);
@@ -165,7 +147,7 @@ void* load_sudoku() {
 		if (ch == '\n' || ch == '\r' || ch == '\t') {
 			continue;
 		}
-		rows_2D[i][j] = ch-'0';
+		Sudoku_2D[i][j] = ch-'0';
 		j++;
 	}
 	fclose(fptr);
@@ -197,7 +179,7 @@ void* print_sudoku() {
 		printf("\n row %d		", i);
 
 		for (int j = 0; j < 9; j++) {
-			printf("%d	", rows_2D[i][j]);
+			printf("%d	", Sudoku_2D[i][j]);
 		}
 		printf("\n");
 
@@ -208,28 +190,15 @@ void* print_sudoku() {
 
 // run main
 int main(void) {
-	printf("\nmain\n");
 
 	pthread_t thread[27];
 
 	load_sudoku();
 
-	///for (int h = 0; h < 9; h++) printf("\nrow h = %d  %d\n", rows_bool[h], h);
-
 	print_sudoku();
 
 	int x = 0;
 	int z = 0;
-	/*
-	for (z = 0; z < 9; z++) {
-		for (x = 0; x < 9; x++) {
-			printf("\nprinted rows[%d][%d]%c", z, x, rows_2D[z][x]);
-		}
-		printf("\nx reached 9");
-		printf("\n\n");
-
-	}*/
-	printf("\ndoneish1\n");
 
 	int index = 0;
 	int i = 0;
@@ -252,13 +221,11 @@ int main(void) {
 
 		}
 	}
-	printf("\ndoneish2\n");
 
 	for (int k = 0; k < num_child_threads-9; k++) pthread_join(thread[k], NULL);
 
-	printf("\ndoneish3\n");
 	bool all_checks = TRUE;
-
+	// set status of main check for validity
 	for (int k = 0; k < 9; k++) {
 		if (rows_bool[k] == FALSE) {
 			printf("\nrow #- %d is invalid\n", k+1);
@@ -281,8 +248,6 @@ int main(void) {
 		printf("\n\nSudoku puzzle is NOT valid\n\n");
 		return 0;
 	}
-
-
 
 
 	printf("\n\nSudoku puzzle is valid\n\n");
