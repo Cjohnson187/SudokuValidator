@@ -20,14 +20,11 @@ typedef int bool;
 #define TRUE 1
 #define FALSE 0
 
-
 bool rows_bool[9] = { TRUE, TRUE, TRUE, TRUE, TRUE, TRUE, TRUE, TRUE, TRUE };
 bool column_bool[9] = { TRUE, TRUE, TRUE, TRUE, TRUE, TRUE, TRUE, TRUE, TRUE };
 bool blocks_bool[9] = { TRUE, TRUE, TRUE, TRUE, TRUE, TRUE, TRUE, TRUE, TRUE };
 
-int Sudoku_2D[9][9] = { 0 };
-
-
+int sudoku_2d[9][9] = { 0 };
 
 typedef struct {
 	int top_row;
@@ -37,38 +34,62 @@ typedef struct {
 } parameters;
 
 
-
+/*
 int sudoku_puzzle[9][9] = {
-	{4,3,5,2,6,9,7,8,1},
-	{6,8,2,4,7,1,4,9,3},
-	{1,9,7,8,3,4,5,6,2},
-	{8,2,6,1,9,5,3,4,7},
-	{3,7,4,6,8,2,9,1,5},
-	{9,5,1,7,4,3,6,2,8},
-	{5,1,9,3,2,6,8,7,4},
-	{2,4,8,9,5,7,1,3,6},
-	{7,6,3,4,1,8,2,5,9}
-};/*
-void* check_block(void* param) {
+	{4,3,5, 2,6,9, 7,8,1},
+	{6,8,2, 4,7,1, 4,9,3},
+	{1,9,7, 8,3,4, 5,6,2},
 
-	parameters* data = (parameters*) data;
+	{8,2,6, 1,9,5, 3,4,7},
+	{3,7,4, 6,8,2, 9,1,5},
+	{9,5,1, 7,4,3, 6,2,8},
 
-	int current_row = data->row;
-	int current_column = data->column;
+	{5,1,9, 3,2,6, 8,7,4},
+	{2,4,8, 9,5,7, 1,3,6},
+	{7,6,3, 4,1,8, 2,5,9}
+};
+  */
 
+
+// method to check blocks
+void* check_block(void* para) {
+
+	parameters* data = (parameters*) para;
+
+	int top = data->top_row;
+	int left = data->left_column;
+	int bottom = data->bottom_row;
+	int right = data->right_column;
+
+	if (top > 6 || top % 3 != 0 || left > 6 || left % 3 != 0) {
+		printf("\ninvalid block format\n");
+		pthread_exit(0);
+	}
+
+	int temp_array[9] = { 0 };
+	int i = 0; 
+	int j = 0;
+
+	for (i = top; i < left + 3; i++) {
+		for (j = left; j < left + 3; j++) {
+			int temp = sudoku_2d[i][j];
+			if (temp < 1 || temp > 9 || temp_array[temp - 1] == 1) {
+				blocks_bool[top + left / 3] = 0;
+
+				pthread_exit(0);
+			}
+			else {
+				temp_array[temp - 1] = 1;
+			}
+		}
+	}
+
+	blocks_bool[top + left / 3] = 1;
 
 }
 
-void* check_row(void* param) {
 
-	parameters* data = (parameters*)data;
-
-	int current_row = data->row;
-	int current_column = data->column;
-
-
-}*/
-
+// method to check rows
 void* check_row(void* para) {
 
 	parameters* data = (parameters*) para;
@@ -84,7 +105,7 @@ void* check_row(void* para) {
 	int i = 0;
 	for (i = 0; i < 9; i++) {
 
-		int temp = Sudoku_2D[current_row][i];
+		int temp = sudoku_2d[current_row][i];
 
 		if (temp > 9 || temp < 1 || temp_array[temp-1] == 1) { 
 			printf(" current row %d invalid \n", current_row+1);
@@ -97,6 +118,7 @@ void* check_row(void* para) {
 	pthread_exit(0);
 }
 
+// method to check columns
 void* check_column(void* para) {
 
 	parameters* data = (parameters*)para;
@@ -112,7 +134,7 @@ void* check_column(void* para) {
 	int i = 0;
 	for (i = 0; i < 9; i++) {
 
-		int temp = Sudoku_2D[i][current_column];
+		int temp = sudoku_2d[i][current_column];
 
 		if (temp > 9 || temp < 1 || temp_array[temp - 1] == 1) {
 			//printf("\ntemp  %d ", temp);
@@ -125,7 +147,6 @@ void* check_column(void* para) {
 	column_bool[current_column] = 1;
 	pthread_exit(0);
 }
-
 
 // load sudoku
 void* load_sudoku() {
@@ -147,12 +168,14 @@ void* load_sudoku() {
 		if (ch == '\n' || ch == '\r' || ch == '\t') {
 			continue;
 		}
-		Sudoku_2D[i][j] = ch-'0';
+		sudoku_2d[i][j] = ch-'0';
 		j++;
 	}
 	fclose(fptr);
 	return 0;
 }
+
+
 
 // fill vert and block
 /*
@@ -173,13 +196,15 @@ void* fill_b() {
 }
 */
 
+
+
 // print out sudoku
 void* print_sudoku() {
 	for (int i = 0; i < 9; i++) {
 		printf("\n row %d		", i);
 
 		for (int j = 0; j < 9; j++) {
-			printf("%d	", Sudoku_2D[i][j]);
+			printf("%d	", sudoku_2d[i][j]);
 		}
 		printf("\n");
 
@@ -219,12 +244,19 @@ int main(void) {
 				pthread_create(&thread[index++], NULL, check_column, column_data);
 			}
 
+			if (i % 3 == 0 && j % 3 == 0) {
+				parameters* block_data = (parameters*)malloc(sizeof(parameters));
+				block_data->top_row = i;
+				block_data->left_column = j;
+				pthread_create(&thread[index++], NULL, check_block, block_data);
+			}
 		}
 	}
 
-	for (int k = 0; k < num_child_threads-9; k++) pthread_join(thread[k], NULL);
+	for (int k = 0; k < num_child_threads; k++) pthread_join(thread[k], NULL);
 
 	bool all_checks = TRUE;
+
 	// set status of main check for validity
 	for (int k = 0; k < 9; k++) {
 		if (rows_bool[k] == FALSE) {
