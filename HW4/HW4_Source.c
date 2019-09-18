@@ -180,7 +180,7 @@ void* load_sudoku() {
 // print out sudoku
 void* print_sudoku() {
 	for (int i = 0; i < 9; i++) {
-		printf("\n		");
+		printf("\n ");
 
 		for (int j = 0; j < 9; j++) {
 			printf("%d	", sudoku_2d[i][j]);
