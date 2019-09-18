@@ -200,44 +200,103 @@ int main(void) {
 
 	print_sudoku();
 
-	int x = 0;
-	int z = 0;
+	int thread_index = 0;
 
-	int index = 0;
-	int i = 0;
-	int j = 0;
-	for (i = 0; i < 9; i++) {
-		for (j = 0; j < 9; j++) {
-			if (j == 0) {
-				parameters *row_data = (parameters*)malloc(sizeof(parameters));
-				row_data->top_row = i;
-				row_data->bottom_row = i;
-				row_data->left_column = j;
-				row_data->right_column = j+8;
-				pthread_create(&thread[index++], NULL, check_row, row_data);
-			}
-			
-			if (i == 0) {
-				parameters *column_data = (parameters*)malloc(sizeof(parameters));
-				column_data->top_row = i;
-				column_data->bottom_row = i+8;
-				column_data->left_column = j;
-				column_data->right_column = j;
-				pthread_create(&thread[index++], NULL, check_column, column_data);
-			}
+	parameters* row_data[9] = { 
+		(parameters*)malloc(sizeof(parameters)),
+		(parameters*)malloc(sizeof(parameters)),
+		(parameters*)malloc(sizeof(parameters)),
 
-			if (i % 3 == 0 && j % 3 == 0) {
-				parameters* block_data = (parameters*)malloc(sizeof(parameters));
-				block_data->top_row = i;
-				block_data->bottom_row = i+2;
-				block_data->left_column = j;
-				block_data->right_column = j+2;
-				pthread_create(&thread[index++], NULL, check_block, block_data);
-			}
-		}
+		(parameters*)malloc(sizeof(parameters)),
+		(parameters*)malloc(sizeof(parameters)),
+		(parameters*)malloc(sizeof(parameters)),
+
+		(parameters*)malloc(sizeof(parameters)),
+		(parameters*)malloc(sizeof(parameters)),
+		(parameters*)malloc(sizeof(parameters)),
+
+	};
+	for (int i = 0; i < 9; i++) {
+		row_data[i]->top_row = i;
+		row_data[i]->bottom_row = i;
+		row_data[i]->left_column = 0;
+		row_data[i]->right_column = 8;
+	}
+	for (int i = 0; i < 9; i++) {
+		pthread_create(&thread[thread_index++], NULL, check_row, row_data[i]);
+
 	}
 
-	for (int k = 0; k < num_child_threads; k++) pthread_join(thread[k], NULL);
+	for (int k = 0; k < 9; k++) pthread_join(thread[k], NULL);
+
+
+	parameters* column_data[9] = { 
+		(parameters*)malloc(sizeof(parameters)),
+		(parameters*)malloc(sizeof(parameters)),
+		(parameters*)malloc(sizeof(parameters)),
+
+		(parameters*)malloc(sizeof(parameters)),
+		(parameters*)malloc(sizeof(parameters)),
+		(parameters*)malloc(sizeof(parameters)),
+
+		(parameters*)malloc(sizeof(parameters)),
+		(parameters*)malloc(sizeof(parameters)),
+		(parameters*)malloc(sizeof(parameters)),
+
+	};
+	for (int i = 0; i < 9; i++) {
+		column_data[i]->top_row = 0;
+		column_data[i]->bottom_row = 8;
+		column_data[i]->left_column = i;
+		column_data[i]->right_column = i;
+	}
+
+	for (int i = 0; i < 9; i++) {
+		pthread_create(&thread[thread_index++], NULL, check_column, column_data[i]);
+	}
+
+	for (int k = 0; k < 9; k++) pthread_join(thread[k], NULL);
+
+	parameters* block_data[9] = { 
+		(parameters*)malloc(sizeof(parameters)),
+		(parameters*)malloc(sizeof(parameters)),
+		(parameters*)malloc(sizeof(parameters)),
+
+		(parameters*)malloc(sizeof(parameters)),
+		(parameters*)malloc(sizeof(parameters)),
+		(parameters*)malloc(sizeof(parameters)),
+
+		(parameters*)malloc(sizeof(parameters)),
+		(parameters*)malloc(sizeof(parameters)),
+		(parameters*)malloc(sizeof(parameters)),
+
+	};
+
+	for (int i = 0; i < 9; i +=3) {
+		block_data[i]->top_row = i;
+		block_data[i]->bottom_row = i+2;
+		block_data[i]->left_column = 0;
+		block_data[i]->right_column = 2;
+
+		block_data[i+1]->top_row = i;
+		block_data[i+1]->bottom_row = i + 2;
+		block_data[i+1]->left_column = 3;
+		block_data[i+1]->right_column = 5;
+
+		block_data[i+2]->top_row = i;
+		block_data[i+2]->bottom_row = i + 2;
+		block_data[i+2]->left_column = 6;
+		block_data[i+2]->right_column = 8;
+
+	}
+
+	for (int i = 0; i < 9; i++) {
+		pthread_create(&thread[thread_index++], NULL, check_block, block_data[i]);
+	}
+
+	for (int k = 0; k < 9; k++) {
+			pthread_join(thread[k], NULL);
+	}
 
 	bool all_checks = TRUE;
 
