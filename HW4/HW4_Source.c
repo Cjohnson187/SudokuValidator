@@ -180,7 +180,7 @@ void* load_sudoku() {
 // print out sudoku
 void* print_sudoku() {
 	for (int i = 0; i < 9; i++) {
-		printf("\n row %d		", i);
+		printf("\n		");
 
 		for (int j = 0; j < 9; j++) {
 			printf("%d	", sudoku_2d[i][j]);
@@ -202,6 +202,33 @@ int main(void) {
 
 	int thread_index = 0;
 
+	// columns
+	parameters* column_data[9] = {
+		(parameters*)malloc(sizeof(parameters)),
+		(parameters*)malloc(sizeof(parameters)),
+		(parameters*)malloc(sizeof(parameters)),
+
+		(parameters*)malloc(sizeof(parameters)),
+		(parameters*)malloc(sizeof(parameters)),
+		(parameters*)malloc(sizeof(parameters)),
+
+		(parameters*)malloc(sizeof(parameters)),
+		(parameters*)malloc(sizeof(parameters)),
+		(parameters*)malloc(sizeof(parameters)),
+	};
+
+	for (int i = 0; i < 9; i++) {
+		column_data[i]->top_row = 0;
+		column_data[i]->bottom_row = 8;
+		column_data[i]->left_column = i;
+		column_data[i]->right_column = i;
+	}
+
+	for (int i = 0; i < 9; i++) pthread_create(&thread[thread_index++], NULL, check_column, column_data[i]);
+
+	for (int k = 0; k < 9; k++) pthread_join(thread[k], NULL);
+
+	// rows
 	parameters* row_data[9] = { 
 		(parameters*)malloc(sizeof(parameters)),
 		(parameters*)malloc(sizeof(parameters)),
@@ -214,7 +241,6 @@ int main(void) {
 		(parameters*)malloc(sizeof(parameters)),
 		(parameters*)malloc(sizeof(parameters)),
 		(parameters*)malloc(sizeof(parameters)),
-
 	};
 	for (int i = 0; i < 9; i++) {
 		row_data[i]->top_row = i;
@@ -222,41 +248,11 @@ int main(void) {
 		row_data[i]->left_column = 0;
 		row_data[i]->right_column = 8;
 	}
-	for (int i = 0; i < 9; i++) {
-		pthread_create(&thread[thread_index++], NULL, check_row, row_data[i]);
-
-	}
+	for (int i = 0; i < 9; i++) pthread_create(&thread[thread_index++], NULL, check_row, row_data[i]);
 
 	for (int k = 0; k < 9; k++) pthread_join(thread[k], NULL);
 
-
-	parameters* column_data[9] = { 
-		(parameters*)malloc(sizeof(parameters)),
-		(parameters*)malloc(sizeof(parameters)),
-		(parameters*)malloc(sizeof(parameters)),
-
-		(parameters*)malloc(sizeof(parameters)),
-		(parameters*)malloc(sizeof(parameters)),
-		(parameters*)malloc(sizeof(parameters)),
-
-		(parameters*)malloc(sizeof(parameters)),
-		(parameters*)malloc(sizeof(parameters)),
-		(parameters*)malloc(sizeof(parameters)),
-
-	};
-	for (int i = 0; i < 9; i++) {
-		column_data[i]->top_row = 0;
-		column_data[i]->bottom_row = 8;
-		column_data[i]->left_column = i;
-		column_data[i]->right_column = i;
-	}
-
-	for (int i = 0; i < 9; i++) {
-		pthread_create(&thread[thread_index++], NULL, check_column, column_data[i]);
-	}
-
-	for (int k = 0; k < 9; k++) pthread_join(thread[k], NULL);
-
+	// blocks
 	parameters* block_data[9] = { 
 		(parameters*)malloc(sizeof(parameters)),
 		(parameters*)malloc(sizeof(parameters)),
@@ -287,16 +283,13 @@ int main(void) {
 		block_data[i+2]->bottom_row = i + 2;
 		block_data[i+2]->left_column = 6;
 		block_data[i+2]->right_column = 8;
-
 	}
 
 	for (int i = 0; i < 9; i++) {
 		pthread_create(&thread[thread_index++], NULL, check_block, block_data[i]);
 	}
 
-	for (int k = 0; k < 9; k++) {
-			pthread_join(thread[k], NULL);
-	}
+	for (int k = 0; k < 9; k++) pthread_join(thread[k], NULL);
 
 	bool all_checks = TRUE;
 
@@ -306,9 +299,7 @@ int main(void) {
 			printf("\nColumn:0X%lx is Invalid\n", column_tid[k]);
 				all_checks = FALSE;
 		}
-		else if (column_bool[k] == TRUE) {
-			printf("\nColumn:0X%lx is Valid\n", column_tid[k]);
-		}
+		else if (column_bool[k] == TRUE) printf("\nColumn:0X%lx is Valid\n", column_tid[k]);
 	}
 
 	for (int k = 0; k < 9; k++) {
@@ -316,19 +307,15 @@ int main(void) {
 			printf("\nRow:0X%lx is Invalid\n", row_tid[k]);
 				all_checks = FALSE;
 		}
-		else if (column_bool[k] == TRUE) {
-			printf("\nRow:0X%lx is Valid\n", row_tid[k]);
-		}
+		else if (column_bool[k] == TRUE) printf("\nRow:0X%lx is Valid\n", row_tid[k]);
 	}
+
 	for (int k = 0; k < 9; k++) {
 		if (blocks_bool[k] == FALSE) {
 			printf("\nSubgrid:0X%lx is Invalid\n", block_tid[k]);
 			all_checks = FALSE;
 		}
-		else if (blocks_bool[k] == TRUE) {
-			printf("\nSubgrid:0X%lx is Valid\n", block_tid[k]);
-		}
-
+		else if (blocks_bool[k] == TRUE) printf("\nSubgrid:0X%lx is Valid\n", block_tid[k]);
 	}
 
 	if (all_checks == FALSE) {
