@@ -70,7 +70,7 @@ void* check_block(void* para) {
 	int i = 0; 
 	int j = 0;
 
-	for (i = top; i < left + 3; i++) {
+	for (i = top; i < top + 3; i++) {
 		for (j = left; j < left + 3; j++) {
 			int temp = sudoku_2d[i][j];
 			if (temp < 1 || temp > 9 || temp_array[temp - 1] == 1) {
@@ -153,7 +153,7 @@ void* load_sudoku() {
 
 	int ch;
 	FILE* fptr;
-	fptr = fopen("input2.txt", "r");
+	fptr = fopen("input3.txt", "r");
 	if (!fptr) return 1;
 
 	int i = 0;
