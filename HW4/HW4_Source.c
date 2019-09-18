@@ -24,6 +24,11 @@ bool rows_bool[9] = { TRUE, TRUE, TRUE, TRUE, TRUE, TRUE, TRUE, TRUE, TRUE };
 bool column_bool[9] = { TRUE, TRUE, TRUE, TRUE, TRUE, TRUE, TRUE, TRUE, TRUE };
 bool blocks_bool[9] = { TRUE, TRUE, TRUE, TRUE, TRUE, TRUE, TRUE, TRUE, TRUE };
 
+unsigned long int row_tid[9] = { 0 };
+unsigned long int column_tid[9] = { 0 };
+unsigned long int block_tid[9] = { 0 };
+
+
 int sudoku_2d[9][9] = { 0 };
 
 typedef struct {
@@ -32,24 +37,6 @@ typedef struct {
 	int left_column;
 	int right_column;
 } parameters;
-
-
-/*
-int sudoku_puzzle[9][9] = {
-	{4,3,5, 2,6,9, 7,8,1},
-	{6,8,2, 4,7,1, 4,9,3},
-	{1,9,7, 8,3,4, 5,6,2},
-
-	{8,2,6, 1,9,5, 3,4,7},
-	{3,7,4, 6,8,2, 9,1,5},
-	{9,5,1, 7,4,3, 6,2,8},
-
-	{5,1,9, 3,2,6, 8,7,4},
-	{2,4,8, 9,5,7, 1,3,6},
-	{7,6,3, 4,1,8, 2,5,9}
-};
-  */
-
 
 // method to check blocks
 void* check_block(void* para) {
@@ -74,8 +61,10 @@ void* check_block(void* para) {
 		for (j = left; j < left + 3; j++) {
 			int temp = sudoku_2d[i][j];
 			if (temp < 1 || temp > 9 || temp_array[temp - 1] == 1) {
+				// block invalid
 				blocks_bool[top + left / 3] = 0;
-
+				printf("\nTID-[0X%lx] TRow: %d, BRow: %d, LCol: %d, RCol: %d Subgrid# %d is invalid!    \n", pthread_self(), top, bottom, left, right, (top + left / 3)+1);
+				block_tid[top + left / 3] = pthread_self();
 				pthread_exit(0);
 			}
 			else {
@@ -83,8 +72,11 @@ void* check_block(void* para) {
 			}
 		}
 	}
-
-	blocks_bool[top + left / 3] = 1;
+	// block valid
+	printf("\nTID-[0X%lx] TRow: %d, BRow: %d, LCol: %d, RCol: %d subgrid# %d is valid!    \n", pthread_self(), top, bottom, left, right, (top + left / 3) + 1);
+	block_tid[top + left / 3] = pthread_self();
+	blocks_bool[top + left / 3] = TRUE;
+	pthread_exit(0);
 
 }
 
@@ -95,7 +87,9 @@ void* check_row(void* para) {
 	parameters* data = (parameters*) para;
 
 	int current_row = data->top_row;
+	int end_row = data->bottom_row;
 	int current_column = data->left_column;
+	int end_column = data->right_column;
 	if (current_column != 0 || current_row > 8) {
 		printf("\ninvalid row format\n");
 		pthread_exit(0);
@@ -108,13 +102,16 @@ void* check_row(void* para) {
 		int temp = sudoku_2d[current_row][i];
 
 		if (temp > 9 || temp < 1 || temp_array[temp-1] == 1) { 
-			printf(" current row %d invalid \n", current_row+1);
+			printf("\nTID-[0X%lx] TRow: %d, BRow: %d, LCol: %d, RCol: %d Row# %d is invalid!\n", pthread_self(), current_row, end_row, current_column, end_column, (current_row) + 1);
+			row_tid[current_row] = pthread_self();
 			rows_bool[current_row] = FALSE;
 			pthread_exit(0);
 		}
 		else temp_array[temp - 1] = 1;
 	}
-	rows_bool[current_row] = 1;
+	printf("\nTID-[0X%lx] TRow: %d, BRow: %d, LCol: %d, RCol: %d Row# %d is Valid!\n", pthread_self(), current_row, end_row, current_column, end_column, (current_row)+1);
+	row_tid[current_row] = pthread_self();
+	rows_bool[current_row] = TRUE;
 	pthread_exit(0);
 }
 
@@ -124,9 +121,11 @@ void* check_column(void* para) {
 	parameters* data = (parameters*)para;
 
 	int current_row = data->top_row;
+	int end_row = data->bottom_row;
 	int current_column = data->left_column;
+	int end_column = data->right_column;
 	if (current_row != 0 || current_column > 8) {
-		printf("\ninvalid column format c - %d,  r - %d  \n", current_column, current_row);
+		printf("\ninvalid column format\n");
 		pthread_exit(0);
 	}
 
@@ -137,14 +136,16 @@ void* check_column(void* para) {
 		int temp = sudoku_2d[i][current_column];
 
 		if (temp > 9 || temp < 1 || temp_array[temp - 1] == 1) {
-			//printf("\ntemp  %d ", temp);
-			printf(" current column %d invalid \n", current_column + 1);
+			printf("\nTID-[0X%lx] TRow: %d, BRow: %d, LCol: %d, RCol: %d Column# %d is Invalid!    \n", pthread_self(), current_row, end_row, current_column, end_column, (current_column)+1);
+			column_tid[current_column] = pthread_self();
 			column_bool[current_column] = FALSE;
 			pthread_exit(0);
 		}
 		else temp_array[temp - 1] = 1;
 	}
-	column_bool[current_column] = 1;
+	printf("\nTID-[0X%lx] TRow: %d, BRow: %d, LCol: %d, RCol: %d Column# %d is Valid!    \n", pthread_self(), current_row, end_row, current_column, end_column, (current_column)+1);
+	column_tid[current_column] = pthread_self();
+	column_bool[current_column] = TRUE;
 	pthread_exit(0);
 }
 
@@ -176,28 +177,6 @@ void* load_sudoku() {
 }
 
 
-
-// fill vert and block
-/*
-void* fill_v() {
-	int i = 0;
-	int j = 0;
-	for (i = 0; i < 9; i++) {
-		for (j = 0; j < 9; j++) {
-			columns_2D[i][j] = rows_2D[j][i];
-		}
-	}
-}
-
-void* fill_b() {
-	int i = 0;
-	int j = 0;
-
-}
-*/
-
-
-
 // print out sudoku
 void* print_sudoku() {
 	for (int i = 0; i < 9; i++) {
@@ -206,8 +185,7 @@ void* print_sudoku() {
 		for (int j = 0; j < 9; j++) {
 			printf("%d	", sudoku_2d[i][j]);
 		}
-		printf("\n");
-
+		printf("\n\n");
 	}
 	return 0;
 }
@@ -233,21 +211,27 @@ int main(void) {
 			if (j == 0) {
 				parameters *row_data = (parameters*)malloc(sizeof(parameters));
 				row_data->top_row = i;
+				row_data->bottom_row = i;
 				row_data->left_column = j;
+				row_data->right_column = j+8;
 				pthread_create(&thread[index++], NULL, check_row, row_data);
 			}
 			
 			if (i == 0) {
 				parameters *column_data = (parameters*)malloc(sizeof(parameters));
 				column_data->top_row = i;
+				column_data->bottom_row = i+8;
 				column_data->left_column = j;
+				column_data->right_column = j;
 				pthread_create(&thread[index++], NULL, check_column, column_data);
 			}
 
 			if (i % 3 == 0 && j % 3 == 0) {
 				parameters* block_data = (parameters*)malloc(sizeof(parameters));
 				block_data->top_row = i;
+				block_data->bottom_row = i+2;
 				block_data->left_column = j;
+				block_data->right_column = j+2;
 				pthread_create(&thread[index++], NULL, check_block, block_data);
 			}
 		}
@@ -259,30 +243,42 @@ int main(void) {
 
 	// set status of main check for validity
 	for (int k = 0; k < 9; k++) {
-		if (rows_bool[k] == FALSE) {
-			printf("\nrow #- %d is invalid\n", k+1);
-			all_checks = FALSE;
-			//return 0;
-		}
 		if (column_bool[k] == FALSE) {
-			printf("\ncolumn #- %d is invalid\n", k+1);
-			all_checks = FALSE;
-			//return 0;
+			printf("\nColumn:0X%lx is Invalid\n", column_tid[k]);
+				all_checks = FALSE;
 		}
-		if (blocks_bool[k] == FALSE) {
-			printf("\nblock #- %d is invalid\n", k+1);
-			all_checks = FALSE;
-			//return 0;
+		else if (column_bool[k] == TRUE) {
+			printf("\nColumn:0X%lx is Valid\n", column_tid[k]);
 		}
 	}
 
+	for (int k = 0; k < 9; k++) {
+		if (rows_bool[k] == FALSE) {
+			printf("\nRow:0X%lx is Invalid\n", row_tid[k]);
+				all_checks = FALSE;
+		}
+		else if (column_bool[k] == TRUE) {
+			printf("\nRow:0X%lx is Valid\n", row_tid[k]);
+		}
+	}
+	for (int k = 0; k < 9; k++) {
+		if (blocks_bool[k] == FALSE) {
+			printf("\nSubgrid:0X%lx is Invalid\n", block_tid[k]);
+			all_checks = FALSE;
+		}
+		else if (blocks_bool[k] == TRUE) {
+			printf("\nSubgrid:0X%lx is Valid\n", block_tid[k]);
+		}
+
+	}
+
 	if (all_checks == FALSE) {
-		printf("\n\nSudoku puzzle is NOT valid\n\n");
+		printf("\n\nSudoku Puzzle is Invalid\n\n");
 		return 0;
 	}
 
 
-	printf("\n\nSudoku puzzle is valid\n\n");
+	printf("\n\nSudoku Puzzle is Valid\n\n");
 	return 0;
 }
 
