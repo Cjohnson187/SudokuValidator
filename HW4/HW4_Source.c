@@ -1,7 +1,6 @@
 /*
 Chris Johnson
 CS3600-001
-HW #3
 program to validate given sudoku solution by rows, columns 
 and blocks in text file seperated by tabs and lines.
 */
